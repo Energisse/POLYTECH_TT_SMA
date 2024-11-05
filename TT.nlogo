@@ -25,12 +25,21 @@ to go
   if ticks = nbrPas [
     stop
   ]
+  comportement
   tick
 end
 
 
 to comportement
+  ask patrouilleurs[
+    let direction random 4  ;; Choisir un nombre aléatoire entre 0 et 3
+    if direction = 0 [ set heading 0 ]    ;; 0 = droite
+    if direction = 1 [ set heading 90 ]   ;; 90 = haut
+    if direction = 2 [ set heading 180 ]  ;; 180 = gauche
+    if direction = 3 [ set heading 270 ]  ;; 270 = bas
 
+    forward 1  ;; Se déplacer d'une case dans la direction choisie
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
