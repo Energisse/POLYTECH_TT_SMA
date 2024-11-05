@@ -6,9 +6,15 @@ patrouilleurs-own[
 
 to setup
   clear-all
-
+  let globalId 0
+  let midX  ( max-pxcor +  min-pxcor ) / 2
+  let midY  ( max-pycor +  min-pycor ) / 2
   create-patrouilleurs nbrpatrouilleurs [
     set shape "airplane"
+    set id globalId
+    setxy midX midY
+    set globalId globalId + 1
+        set label (id)
   ]
 
   reset-ticks
@@ -123,7 +129,7 @@ CHOOSER
 nbrPatrouilleurs
 nbrPatrouilleurs
 1 2 3 4 8 16 32 64
-0
+7
 
 @#$#@#$#@
 ## WHAT IS IT?
