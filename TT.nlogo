@@ -4,6 +4,10 @@ patrouilleurs-own[
   id
 ]
 
+patches-own [
+  oisivete
+]
+
 to setup
   clear-all
   let globalId 0
@@ -17,6 +21,11 @@ to setup
         set label (id)
   ]
 
+  ask patches [
+    set oisivete 0
+    set plabel  oisivete
+  ]
+
   reset-ticks
 end
 
@@ -24,6 +33,10 @@ end
 to go
   if ticks = nbrPas [
     stop
+  ]
+  ask patches [
+    set oisivete oisivete + 1
+    set plabel  oisivete
   ]
   comportement
   tick
@@ -39,17 +52,21 @@ to comportement
     if direction = 3 [ set heading 270 ]  ;; 270 = bas
 
     forward 1  ;; Se déplacer d'une case dans la direction choisie
+    ask patch-here [
+      set oisivete 0
+       set plabel  oisivete
+    ]
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 229
 28
-637
-437
+1037
+837
 -1
 -1
-20.0
+40.0
 1
 10
 1
