@@ -27,6 +27,11 @@ to go
   ]
   tick
 end
+
+
+to comportement
+
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 229
@@ -42,8 +47,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 19
