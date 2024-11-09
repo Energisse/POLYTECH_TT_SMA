@@ -57,14 +57,15 @@ end
 
 
 to comportement-patrouilleur
-  let direction one-of [0 90 180 270]  ; Directions cardinales
-
-  set heading direction
-  forward 1
-    ask patch-here [
-      set oisivete 0
-       set plabel  oisivete
-    ]
+  ifelse reactif[
+    move-to max-one-of neighbors4[oisivete]
+  ][
+    move-to one-of neighbors4
+  ]
+  ask patch-here [
+     set oisivete 0
+     set plabel  oisivete
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -88,8 +89,8 @@ GRAPHICS-WINDOW
 19
 0
 19
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -112,10 +113,10 @@ NIL
 1
 
 BUTTON
-26
-96
-89
-129
+25
+98
+88
+131
 NIL
 go
 T
@@ -171,10 +172,10 @@ nbrPatrouilleurs
 7
 
 MONITOR
-23
-268
-177
-313
+21
+316
+175
+361
 NIL
 max [oisivete] of patches
 17
@@ -182,10 +183,10 @@ max [oisivete] of patches
 11
 
 PLOT
-66
-402
-266
-552
+17
+376
+217
+526
 plot 1
 NIL
 NIL
@@ -198,6 +199,17 @@ false
 "" ""
 PENS
 "pen-0" 1.0 0 -7500403 true "" "plot max-max-idle"
+
+SWITCH
+25
+263
+160
+296
+reactif
+reactif
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
