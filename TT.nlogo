@@ -1,3 +1,7 @@
+globals [
+   max-max-idle
+]
+
 breed [ patrouilleurs patrouilleur ]
 
 patrouilleurs-own[
@@ -13,6 +17,8 @@ to setup
   let globalId 0
   let midX  ( max-pxcor +  min-pxcor ) / 2
   let midY  ( max-pycor +  min-pycor ) / 2
+  set max-max-idle 0
+
   create-patrouilleurs nbrpatrouilleurs [
     set shape "airplane"
     set id globalId
@@ -38,25 +44,27 @@ to go
     set oisivete oisivete + 1
     set plabel  oisivete
   ]
-  comportement
+  ask patrouilleurs [
+    comportement-patrouilleur
+  ]
+    let max-oisivete max [oisivete] of patches
+
+   if max-oisivete > max-max-idle [
+    set max-max-idle max-oisivete
+  ]
   tick
 end
 
 
-to comportement
-  ask patrouilleurs[
-    let direction random 4  ;; Choisir un nombre aléatoire entre 0 et 3
-    if direction = 0 [ set heading 0 ]    ;; 0 = droite
-    if direction = 1 [ set heading 90 ]   ;; 90 = haut
-    if direction = 2 [ set heading 180 ]  ;; 180 = gauche
-    if direction = 3 [ set heading 270 ]  ;; 270 = bas
+to comportement-patrouilleur
+  let direction one-of [0 90 180 270]  ; Directions cardinales
 
-    forward 1  ;; Se déplacer d'une case dans la direction choisie
+  set heading direction
+  forward 1
     ask patch-here [
       set oisivete 0
        set plabel  oisivete
     ]
-  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -172,6 +180,24 @@ max [oisivete] of patches
 17
 1
 11
+
+PLOT
+66
+402
+266
+552
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"pen-0" 1.0 0 -7500403 true "" "plot max-max-idle"
 
 @#$#@#$#@
 ## WHAT IS IT?
