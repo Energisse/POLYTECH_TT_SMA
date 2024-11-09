@@ -163,12 +163,12 @@ nbrPatrouilleurs
 7
 
 MONITOR
-23
-268
-177
-313
+108
+329
+252
+374
 NIL
-max [oisivete] of patches
+max [energie] of turtles
 17
 1
 11
