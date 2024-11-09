@@ -10,6 +10,8 @@ patrouilleurs-own[
 
 patches-own [
   oisivete
+  gain
+  cout
 ]
 
 to setup
@@ -29,6 +31,8 @@ to setup
 
   ask patches [
     set oisivete 0
+    set gain 0
+    set cout 0
     set plabel  oisivete
   ]
 

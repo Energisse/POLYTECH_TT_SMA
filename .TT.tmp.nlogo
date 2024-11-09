@@ -10,6 +10,8 @@ patrouilleurs-own[
 
 patches-own [
   oisivete
+  gain
+  cout
 ]
 
 to setup
@@ -29,6 +31,7 @@ to setup
 
   ask patches [
     set oisivete 0
+
     set plabel  oisivete
   ]
 
@@ -62,11 +65,9 @@ to comportement-patrouilleur
   ][
     move-to one-of neighbors4
   ]
-
-    ask patch-here [
-      set oisivete 0
-       set plabel  oisivete
-
+  ask patch-here [
+     set oisivete 0
+     set plabel  oisivete
   ]
 end
 @#$#@#$#@
