@@ -1,5 +1,8 @@
 globals [
-   max-max-idle
+   max_oisivete
+  MaxMaxIdle_normalized
+  queue
+  visited
 ]
 
 breed [ patrouilleurs patrouilleur ]
@@ -11,7 +14,7 @@ patrouilleurs-own[
 patches-own [
   oisivete
   gain
-  cout
+  coût
 ]
 
 to setup
@@ -19,7 +22,6 @@ to setup
   let globalId 0
   let midX  ( max-pxcor +  min-pxcor ) / 2
   let midY  ( max-pycor +  min-pycor ) / 2
-  set max-max-idle 0
 
   create-patrouilleurs nbrpatrouilleurs [
     set shape "airplane"
@@ -31,8 +33,6 @@ to setup
 
   ask patches [
     set oisivete 0
-    set gain 0
-    set cout 0
     set plabel  oisivete
   ]
 
@@ -41,6 +41,10 @@ end
 
 
 to go
+
+    set max_oisivete max [oisivete] of patches; set the label "max_oisivete" value of the monitor by the max oisivete value among patches
+  set MaxMaxIdle_normalized ( nbrpatrouilleurs / count patches ) * max_oisivete ; MaxMaxidle normalized
+
   if ticks = nbrPas [
     stop
   ]
@@ -48,19 +52,12 @@ to go
     set oisivete oisivete + 1
     set plabel  oisivete
   ]
-  ask patrouilleurs [
-    comportement-patrouilleur
-  ]
-    let max-oisivete max [oisivete] of patches
-
-   if max-oisivete > max-max-idle [
-    set max-max-idle max-oisivete
-  ]
+  comportement-des-patrouilleurs
   tick
 end
 
 
-to comportement-patrouilleur
+to comportement-reactif
   ifelse reactif[
     move-to max-one-of neighbors4[oisivete]
   ][
@@ -71,6 +68,85 @@ to comportement-patrouilleur
      set plabel  oisivete
   ]
 end
+
+
+to calculer-utilité [current_patrouilleur]
+  ask patches [; calculate the patch utility, i.e. the properties gain and coût
+    set gain oisivete
+    set coût distance current_patrouilleur ;distance between the patch to reach and the current patrol
+  ]
+end
+
+
+to comportement-cognitif
+ ; Trouver la tuile avec la meilleur utilité
+  let cible max-one-of patches [gain - coût]
+  ; Trouver le chemin le plus court vers la cible
+  let chemin bfs-to cible
+  ; Se déplacer vers la première tuile du chemin
+  ifelse is-list? chemin [
+    face first chemin
+    move-to first chemin
+  ] [
+    ; Se déplacer vers la tuile cible directement
+    move-to chemin
+  ]
+  ; Réinitialiser l'oisiveté de la tuile actuelle
+  reinitialiser-oisivete-courante
+end
+
+
+to-report bfs-to [target_patch]
+  set queue (list (list patch-here)) ; add to the queue the patch from which we start (where the current patrol is) to reach target_patch
+  set visited patch-set []  ; list of nodes visited
+
+  while [not empty? queue] [; while the target_patch hasn't been reach
+    let path dequeue ;extract the first path of the queue by removing it
+    let current last path  ;put the current patch as the last of the path
+    if current = target_patch [
+      if length path > 1 [
+        report but-first path
+      ]
+      report path ;path is here a list with one patch
+    ]
+
+    ask current [
+      ask neighbors4 with [not member? self visited] [ ; for each neighbor among the 4 neighbors of the current patch add it to the visited list and the queue only if it's not visited yet
+      set visited (patch-set visited self)
+      set queue lput (lput self path) queue
+    ]
+    ]
+  ]
+end
+
+to-report dequeue
+  let first-item first queue ; report the 1st element of the list
+  set queue but-first queue ; report all elements of the list except the 1st; (the opposite with but-last don't report the last element)
+  report first-item
+end
+
+
+to reinitialiser-oisivete-courante
+  ; Réinitialiser l'oisiveté de la tuile visitée par le patrouilleur
+  ask patch-here [
+    set oisivete 0
+    set plabel  oisivete
+  ]
+end
+
+
+to comportement-des-patrouilleurs
+  ifelse cognitif [
+    foreach (sort patrouilleurs) [patrouilleurCourant ->
+      calculer-utilité patrouilleurCourant
+ ask patrouilleurCourant [comportement-cognitif]
+    ]
+  ][
+    ask patrouilleurs [comportement-reactif]
+  ]
+end
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 229
@@ -176,10 +252,10 @@ nbrPatrouilleurs
 7
 
 MONITOR
-21
-316
-175
-361
+19
+358
+173
+403
 NIL
 max [oisivete] of patches
 17
@@ -187,10 +263,10 @@ max [oisivete] of patches
 11
 
 PLOT
-17
-376
-217
-526
+15
+418
+215
+568
 plot 1
 NIL
 NIL
@@ -202,7 +278,7 @@ true
 false
 "" ""
 PENS
-"pen-0" 1.0 0 -7500403 true "" "plot max-max-idle"
+"pen-0" 1.0 0 -7500403 true "" "plot MaxMaxIdle_normalized"
 
 SWITCH
 25
@@ -211,46 +287,109 @@ SWITCH
 296
 reactif
 reactif
-0
+1
+1
+-1000
+
+SWITCH
+25
+318
+128
+351
+cognitif
+cognitif
+1
 1
 -1000
 
 @#$#@#$#@
-## WHAT IS IT?
+## Qu'est-ce que c'est ?
 
-(a general understanding of what the model is trying to show or explain)
+Cette simulation NetLogo modélise un problème de patrouille multi-agents.
 
-## HOW IT WORKS
+## Comment ça fonctionne
 
-(what rules the agents use to create the overall behavior of the model)
+Deux comportements distincts sont proposés pour les agents patrouilleurs :
 
-## HOW TO USE IT
+1. **Comportement réactif** : avec deux variantes
+   - **Aléatoire** : chaque patrouilleur se déplace aléatoirement sur l’un des 4 patchs voisins.
+   - **Heuristique** : le patrouilleur choisit parmi les 4 voisins celui ayant la valeur d’oisiveté maximale.
 
-(how to use the model, including a description of each of the items in the Interface tab)
+2. **Comportement cognitif** : chaque patrouilleur identifie le patch le plus ancien et le plus proche pour s’y diriger, en utilisant une recherche du plus court chemin via l’algorithme BFS.
 
-## THINGS TO NOTICE
+## Comment l'utiliser
 
-(suggested things for the user to notice while running the model)
+La configuration de la simulation inclut :
 
-## THINGS TO TRY
+- Un curseur pour le nombre de pas de simulation.
+- Un menu pour le nombre de patrouilleurs.
+- Deux interrupteurs :
+   - Le premier sélectionne le mode aléatoire (ON) ou heuristique (OFF par défaut) pour le comportement réactif.
+   - Le second active le mode cognitif avec BFS pour un patrouilleur désigné, visant un patch cible dont l’oisiveté est maximale.
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+En outre :
+- Un moniteur indique la valeur maximale d’oisiveté pour chaque pas.
+- Un graphique montre l’évolution de l’oisiveté normalisée.
 
-## EXTENDING THE MODEL
+## Points à noter
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+### Exemple 3
 
-## NETLOGO FEATURES
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+Dans le cas heuristique, l’oisiveté reste plus faible, mais le "scope d’exploration" est limité aux voisins directs. Avec le comportement aléatoire, ce scope s’étend à tout l’environnement.
 
-## RELATED MODELS
+### Exemple 5
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Les simulations répétées 10 fois avec BehaviorSpace et les résultats en CSV permettent de générer les courbes pour les comportements 
+
+Les résultats montrent :
+ - aleatoire : Plus le nombre de patrouilleurs augmente, plus la contribution des patrouilleurs est faible, car ils se déplacent de manière aléatoire.
+ - heuristique : Plus le nombre de patrouilleurs augmente, plus la contribution des patrouilleurs est forte, car ils se déplacent vers les zones les plus oisives.
+ - cognitif : Plus le nombre de patrouilleurs augmente, plus la contribution des patrouilleurs est faible, car ils ont tendance à se grouper autour de la zone la plus oisive et donc à ne pas explorer d'autres zones.
+
+
+#### Cas réactif aléatoire :
+   ![Graphe_aleatoire_1](img/graphique_1_aléatoire.png)
+   ![Graphe_aleatoire_2](img/graphique_2_aléatoire.png)
+   ![Graphe_aleatoire_4](img/graphique_4_aléatoire.png)
+   ![Graphe_aleatoire_8](img/graphique_8_aléatoire.png)
+   ![Graphe_aleatoire_16](img/graphique_16_aléatoire.png)
+   ![Graphe_aleatoire_32](img/graphique_32_aléatoire.png)
+   ![Graphe_aleatoire_64](img/graphique_64_aléatoire.png)
+
+#### Cas réactif heuristique :
+   ![Graphe_reactif_1](img/graphique_1_reactif.png)
+   ![Graphe_reactif_2](img/graphique_2_reactif.png)
+   ![Graphe_reactif_4](img/graphique_4_reactif.png)
+   ![Graphe_reactif_8](img/graphique_8_reactif.png)
+   ![Graphe_reactif_16](img/graphique_16_reactif.png)
+   ![Graphe_reactif_32](img/graphique_32_reactif.png)
+   ![Graphe_reactif_64](img/graphique_64_reactif.png)
+
+#### Cas cognitif :
+   ![Graphe_cognitif_1](img/graphique_1_cognitif.png)
+   ![Graphe_cognitif_2](img/graphique_2_cognitif.png)
+   ![Graphe_cognitif_4](img/graphique_4_cognitif.png)
+   ![Graphe_cognitif_8](img/graphique_8_cognitif.png)
+   ![Graphe_cognitif_16](img/graphique_16_cognitif.png)
+   ![Graphe_cognitif_32](img/graphique_32_cognitif.png)
+   ![Graphe_cognitif_64](img/graphique_64_cognitif.png)
+
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Auteur : 
+
+- HALVICK Thomas
+- GHAZEL Hassen  
+
+Organisation : 
+
+- Polytech Lyon 5A INFORMATIQUE
+
+Date : 
+
+- 11/2024
 @#$#@#$#@
 default
 true
@@ -561,6 +700,56 @@ NetLogo 6.4.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="cog" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>MaxMaxIdle_normalized</metric>
+    <enumeratedValueSet variable="nbrPas">
+      <value value="3000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nbrPatrouilleurs">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="4"/>
+      <value value="8"/>
+      <value value="16"/>
+      <value value="32"/>
+      <value value="64"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="cognitif">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="reactif">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="non cog" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>MaxMaxIdle_normalized</metric>
+    <enumeratedValueSet variable="nbrPas">
+      <value value="3000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nbrPatrouilleurs">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="4"/>
+      <value value="8"/>
+      <value value="16"/>
+      <value value="32"/>
+      <value value="64"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="cognitif">
+      <value value="true"/>
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="reactif">
+      <value value="true"/>
+      <value value="false"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
